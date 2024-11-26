@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server</title>
+</head>
+<body>
+    <div>
+        <h3>Send Message to ESP8266</h3>
+        <input type="text" id="messageBox" placeholder="Type your message here">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+        <script>
+          // Connect to the WebSocket server
+          const ws = new WebSocket('ws://192.168.1.64:8080');
+
+          ws.onopen = () => {
+            console.log('Connected to WebSocket server');
+          };
+
+          ws.onmessage = (event) => {
+            console.log('Message from server:', event.data);
+          };
+
+          ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+          };
+
+          ws.on('close', () => {
+              console.log('Client disconnected');
+          });
+
+          function sendMessage() {
+            const message = document.getElementById('messageBox').value;
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(message);
+              console.log('Sent:', message);
+            } else {
+              console.error('WebSocket is not open');
+            }
+          }
+        </script>
+</body>
+</html>
