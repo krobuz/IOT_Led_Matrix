@@ -1,14 +1,22 @@
 #include <ESP8266WiFi.h>
 #include <WebSocketsClient.h>
+#include <SoftwareSerial.h>
+
+
+#define RX 4
+#define TX 5
 
 // const char* ssid = "HALAMDEPZAIDANGKEPHAI";
 // const char* password = "halam232003";
-const char* ssid = "iPhone11";
-const char* password = "99999999";
-const char* server_host = "172.20.10.2";
+// const char* ssid = "iPhone11";
+// const char* password = "99999999";
+const char* ssid = "Minh Nhi";
+const char* password = "tumotdentam";
+const char* server_host = "192.168.1.89";
 const uint16_t port = 3000;   
 WebSocketsClient webSocket;
 
+SoftwareSerial mySerial(RX, TX);
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     switch (type) {
@@ -23,7 +31,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
             Serial.printf("Received: %s\n", payload); // Log the raw payload
             Serial.printf("Forwarding to Arduino: %s\n", payload);
 
-            Serial1.printf((char*)payload); // Forward message to Arduino via hardware serial
+            mySerial.printf((char*)payload); // Forward message to Arduino via hardware serial
             break;
         case WStype_ERROR: 
             Serial.printf("WebSocket Error: %s\n", payload);
@@ -33,7 +41,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 void setup() {
     Serial.begin(115200);   // For ESP8266 debugging  
-    Serial1.begin(9600);  
+    mySerial.begin(9600);  
 
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {

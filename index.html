@@ -12,7 +12,7 @@
         <button onclick="sendMessage()">Send</button>
     </div>
         <script>
-          const ws = new WebSocket('ws://172.20.10.2:3000');
+          const ws = new WebSocket('ws://192.168.1.89:3000');
 
           ws.onopen = () => {
             console.log('Connected to WebSocket server');

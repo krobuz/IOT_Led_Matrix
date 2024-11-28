@@ -3,7 +3,7 @@
 
 #define RX 10
 #define TX 11
-SoftwareSerial espSerial(RX, TX);
+SoftwareSerial mySerial(RX, TX);
 
 
 #define ClockRow 6
@@ -407,7 +407,7 @@ void setup() {
   attachInterrupt(1, changeScript, FALLING);
 
   Serial.begin(115200);
-  espSerial.begin(9600);    //communication with esp
+  mySerial.begin(9600);    //communication with esp
 }
 
 void loop() {
@@ -419,82 +419,94 @@ void loop() {
   //  displayString("NIKE");
   //  displayBuffer();
   //  displayMatrix();
+
+
+
+
+
   String received;
-  if (espSerial.available() > 0) {
+  if (mySerial.available() > 0) {
     // uartString = espSerial.readStringUntil('\n'); //read data from esp
     // Serial.println("Received from ESP: " + uartString); //debug log 
-
-    received = espSerial.readStringUntil('\n'); // Read message
+    received = mySerial.readStringUntil('\n'); // Read message
     Serial.println("Received from ESP: " + received); // Debug
     displayText = received.c_str();
   }
   scrollText_ToLeft(displayText, NUM_MATRICES * MATRIX_COLS, 0, scroll_time);
-  // currentMode = mode;
 
-  // static unsigned long previousMillis = 0;
-  // unsigned long currentMillis = millis();
 
-  // if (currentMillis - previousMillis >= 2000) {
-  //   previousMillis = currentMillis;
 
-  //   temperature = dht.readTemperature();
-  //   humidity = dht.readHumidity();
 
-  //   Serial.print("Temperature: ");
-  //   Serial.println(temperature);
-  //   Serial.print("Humidity: ");
-  //   Serial.println(humidity);
-  // }
-  // if (isnan(temperature) || isnan(humidity)) {
-  //   //Serial.println("Failed to read from DHT sensor!");
-  //   const char *error = "Error reading DHT sensor!";
-  //   scrollText_ToLeft(error, NUM_MATRICES * MATRIX_COLS, 0, scroll_time);
-  // } else {
 
-  //   textTemp = String((int)temperature) + "`C";
-  //   textHum = String((int)humidity) + "%";
-  //   sensorText = textTemp + "|" + textHum;
+
+
+
+  currentMode = mode;
+
+  static unsigned long previousMillis = 0;
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= 2000) {
+    previousMillis = currentMillis;
+
+    temperature = dht.readTemperature();
+    humidity = dht.readHumidity();
+
+    Serial.print("Temperature: ");
+    Serial.println(temperature);
+    Serial.print("Humidity: ");
+    Serial.println(humidity);
+  }
+  if (isnan(temperature) || isnan(humidity)) {
+    //Serial.println("Failed to read from DHT sensor!");
+    const char *error = "Error reading DHT sensor!";
+    scrollText_ToLeft(error, NUM_MATRICES * MATRIX_COLS, 0, scroll_time);
+  } else {
+
+    textTemp = String((int)temperature) + "`C";
+    textHum = String((int)humidity) + "%";
+    sensorText = textTemp + "|" + textHum;
     
 
-  //   size_t textLength = strlen(displayText);
-  //   switch (mode) {
-  //     case 0:
-  //       displayText = sensorText.c_str();
-  //       if (displayTemp) {
-  //         clearBuffer();
-  //         setPosition(0, 0);
-  //         displayString(textTemp.c_str());
-  //         displayBuffer();
-  //       } else {
-  //         clearBuffer();
-  //         setPosition(0, 0);
-  //         displayString(textHum.c_str());
-  //         displayBuffer();
-  //       }
-  //       currentMillis = millis();
-  //       static unsigned long lastTypeData = 0;
-  //       if (currentMillis - lastTypeData >= 5000) {
-  //         lastTypeData = currentMillis;
-  //         displayTemp = !displayTemp;
-  //       }
-  //       break;
-  //     case 1:
-  //       scrollText_ToLeft(displayText, NUM_MATRICES * MATRIX_COLS, 0, scroll_time);
-  //       break;
-  //     case 2:
-  //       scrollText_ToRight(displayText, (-textLength * 7), 0, scroll_time);
-  //       break;
-  //     case 3:
-  //       scrollText_ToTop(displayText, 0, MATRIX_ROWS, scroll_time);
-  //       break;
-  //     case 4:
-  //       scrollText_ToBottom(displayText, 0, -MATRIX_ROWS, scroll_time);
-  //       break;
-  //     default:
-  //       scrollText_ToLeft("ERROR", NUM_MATRICES * MATRIX_COLS, 0, scroll_time);
-  //       break;
-  //   }
-  // }
+    size_t textLength = strlen(displayText);
+    switch (mode) {
+      case 0:
+        displayText = sensorText.c_str();
+        if (displayTemp) {
+          clearBuffer();
+          setPosition(0, 0);
+          displayString(textTemp.c_str());
+          displayBuffer();
+        } else {
+          clearBuffer();
+          setPosition(0, 0);
+          displayString(textHum.c_str());
+          displayBuffer();
+        }
+        currentMillis = millis();
+        static unsigned long lastTypeData = 0;
+        if (currentMillis - lastTypeData >= 5000) {
+          lastTypeData = currentMillis;
+          displayTemp = !displayTemp;
+        }
+        break;
+      case 1:
+        scrollText_ToLeft(displayText, NUM_MATRICES * MATRIX_COLS, 0, scroll_time);
+        break;
+      case 2:
+        scrollText_ToRight(displayText, (-textLength * 7), 0, scroll_time);
+        break;
+      case 3:
+        scrollText_ToTop(displayText, 0, MATRIX_ROWS, scroll_time);
+        break;
+      case 4:
+        scrollText_ToBottom(displayText, 0, -MATRIX_ROWS, scroll_time);
+        break;
+      default:
+        scrollText_ToLeft("ERROR", NUM_MATRICES * MATRIX_COLS, 0, scroll_time);
+        break;
+    }
+  }
 }
 
 void hc595out(unsigned char byte) {
