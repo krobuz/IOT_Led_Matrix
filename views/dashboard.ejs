@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script defer src="/public/dashboard.js"></script> <!-- Dashboard JavaScript -->
+    <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+    <h1>Welcome, <%= username %>!</h1>
+
+    <!-- WebSocket Connection Status -->
+    <p id="ws-status">Connecting to WebSocket...</p>
+
+    <!-- System Controls -->
+    <section>
+        <h2>Control Panel</h2>
+        <form id="controlForm">
+            <label for="ledText">LED Text:</label>
+            <input type="text" id="ledText" name="ledText">
+            <br>
+            <label for="scrollSpeed">Scroll Speed:</label>
+            <input type="number" id="scrollSpeed" name="scrollSpeed" min="1" max="10">
+            <br>
+            <label for="scrollDirection">Scroll Direction:</label>
+            <select id="scrollDirection" name="scrollDirection">
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+                <option value="up">Up</option>
+                <option value="down">Down</option>
+            </select>
+            <br>
+            <button type="submit">Update</button>
+        </form>
+    </section>
+
+    <!-- Real-Time Monitoring -->
+    <section>
+        <h2>Sensor Data</h2>
+        <p>Temperature: <span id="temperature">--</span> °C</p>
+        <p>Humidity: <span id="humidity">--</span> %</p>
+    </section>
+
+    <!-- Activity Logs -->
+    <section>
+        <h2>Activity Logs</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="activityLogs">
+                <!-- Logs will be dynamically filled here -->
+            </tbody>
+        </table>
+    </section>
+
+    <div>
+        <h3>Send Message to ESP8266</h3>
+        <input type="text" id="messageBox" placeholder="Type your message here" />
+        <button id="sendButton">Send</button>
+      </div>
+      <script type="module" src="/public/dashboard.js"></script>
+</body>
+</html>
