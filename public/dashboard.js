@@ -22,9 +22,19 @@ ws.onclose = () => {
 
 function sendMessage() {
     const message = document.getElementById('messageBox').value;
+    const direction = document.getElementById('scrollDirection').value;
+    const speed = document.getElementById('scrollSpeed').value;
+
+    const payload = JSON.stringify({
+        type: "display_settings",
+        message: message,
+        direction: direction,
+        speed: parseInt(speed, 10)
+    });
+
     if (ws.readyState === WebSocket.OPEN) {
-        ws.send(message);
-        console.log('Sent:', message);
+        ws.send(payload);
+        console.log('Sent:', payload);
     } else {
         console.error('WebSocket is not open');
     }

@@ -64,6 +64,54 @@ app.post('/login', (req, res) => {
 });
 
 
+app.post('/signup', async (req, res) => {
+    const { username, password, confirmPassword } = req.body;
+
+    // Validate the inputs
+    if (!username || !password || !confirmPassword) {
+        return res.render('signup', { errorMessage: 'All fields are required.' });
+    }
+
+    if (password !== confirmPassword) {
+        return res.render('signup', { errorMessage: 'Passwords do not match.' });
+    }
+
+    try {
+        // Check if the username already exists
+        const checkUserSql = 'SELECT * FROM users WHERE username = ?';
+        const [results] = await db.promise().query(checkUserSql, [username]);
+
+        if (results.length > 0) {
+            return res.render('signup', { errorMessage: 'Username already exists.' });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insert the user into the database
+        const insertUserSql = 'INSERT INTO users (username, password) VALUES (?, ?)';
+        await db.promise().query(insertUserSql, [username, hashedPassword]);
+
+        // Redirect to login or dashboard
+        res.render('login', { successMessage: 'Signup successful! Please log in.' });
+    } catch (err) {
+        console.error(err);
+        res.render('signup', { errorMessage: 'Database error. Please try again later.' });
+    }
+});
+
+app.get('/api/activity-logs', (req, res) => {
+    const sql = 'SELECT timestamp, user_id, action, text_content, scroll_speed, scroll_direction FROM system_changes ORDER BY timestamp DESC LIMIT 10'; // Adjust your query as needed
+    db.query(sql, (err, results) => {
+      if (err) {
+        res.status(500).send({ error: 'Error fetching activity logs' });
+      } else {
+        res.json(results); // Send logs as JSON
+      }
+    });
+  });
+
+
 wss.on('connection', (ws) => {
     console.log('Client connected');
 
@@ -73,10 +121,25 @@ wss.on('connection', (ws) => {
 
         wss.clients.forEach((client) => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                // console.log(`Forwarding message to client: ${decodedMessage}`);
                 client.send(decodedMessage);
             }
         })
+
+        try {
+            // Parse the received JSON
+            const parsedData = JSON.parse(message);
+    
+            // Handle based on the 'type' field
+            switch (parsedData.type) {
+                case 'display_settings':
+                    handleDisplaySettings(parsedData);
+                    break;
+                default:
+                    console.error('Unknown data type:', parsedData.type);
+            }
+        } catch (err) {
+            console.error('Failed to parse message:', message, err);
+        }
         
     });
     ws.on('close', () => {
@@ -85,6 +148,27 @@ wss.on('connection', (ws) => {
 
     ws.send('Hello from Node.js Server');
 });
+
+
+
+function handleDisplaySettings(data) {
+    const { message, direction, speed } = data;
+
+    const sql = `
+        INSERT INTO system_changes (user_id, text_content, scroll_speed, scroll_direction, action)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+    const userId = 3; // Replace with actual user ID
+    const action = 'display_update';
+
+    db.query(sql, [userId, message, speed, direction, action], (err, result) => {
+        if (err) {
+            console.error('Failed to insert display settings into database:', err);
+        } else {
+            console.log('Display settings saved successfully:', result);
+        }
+    });
+}
 
 
 const PORT = 3000;
