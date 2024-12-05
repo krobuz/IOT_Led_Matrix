@@ -118,28 +118,53 @@ app.get('/api/activity-logs', (req, res) => {
 wss.on('connection', (ws) => {
     console.log('Client connected');
 
+    ws.isESP = false;
+
     ws.on('message', (message) => {
-        const decodedMessage = message.toString();
-        console.log('Received from client:', decodedMessage);
-
-        wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(decodedMessage);
-            }
-        })
-
         try {
-            // Parse the received JSON
-            const parsedData = JSON.parse(message);
-    
-            // Handle based on the 'type' field
+            const decodedMessage = message.toString();
+            console.log('Received from client:', decodedMessage);
+
+            
+            const parsedData = JSON.parse(decodedMessage);
+
+            if (parsedData.type === 'esp_device') {
+                ws.isESP = true;
+                console.log('ESP device connected');
+            }
+
+            // Handle messages based on the type field
             switch (parsedData.type) {
-                case 'display_settings':
-                    handleDisplaySettings(parsedData);
-                    
+                case 'esp_device':
+                    console.log('Message from ESP8266:', parsedData.message);
+
+                    // wss.clients.forEach((client) => {
+                    //     if (client !== ws && client.readyState === WebSocket.OPEN) {
+                    //         client.send(JSON.stringify(parsedData));
+                    //     }
+                    // });
                     break;
+
+                case 'display_settings':
+                    console.log('Message from Web Dashboard:', parsedData);
+                    
+                    wss.clients.forEach((client) => {
+                        if (client.readyState === WebSocket.OPEN && client.isESP) {
+                            client.send(JSON.stringify({
+                                type: 'command',
+                                command: 'update_display', // Specify the command type
+                                message: parsedData.message,
+                                direction: parsedData.direction,
+                                speed: parsedData.speed
+                            }));
+                            console.log("sent command to esp")
+                        }
+                    });
+                    handleDisplaySettings(parsedData);
+                    break;
+
                 default:
-                    console.error('Unknown data type:', parsedData.type);
+                    console.error('Unknown message type:', parsedData.type);
             }
         } catch (err) {
             console.error('Failed to parse message:', message, err);

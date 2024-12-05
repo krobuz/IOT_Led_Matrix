@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <WebSocketsClient.h>
 #include <SoftwareSerial.h>
+#include <ArduinoJson.h>
 
 
 #define RX 4 //D1
@@ -8,15 +9,28 @@
 
 // const char* ssid = "HALAMDEPZAIDANGKEPHAI";
 // const char* password = "halam232003";
-const char* ssid = "iPhone11";
-const char* password = "99999999";
-// const char* ssid = "Minh Nhi";
-// const char* password = "tumotdentam";
-const char* server_host = "172.20.10.2";
-const uint16_t port = 3000;   
+// const char* ssid = "iPhone11";
+// const char* password = "99999999";
+const char* ssid = "Minh Nhi";
+const char* password = "tumotdentam";
+const char* server_host = "192.168.1.140";
+const uint16_t port = 3001;   
 WebSocketsClient webSocket;
 
 SoftwareSerial mySerial(RX, TX);
+
+
+void sendIdentity() {
+    StaticJsonDocument<100> doc;
+
+    doc["type"] = "esp_device";
+    doc["message"] = "hello from esp";
+
+    String jsonString;
+    serializeJson(doc, jsonString);
+
+    webSocket.sendTXT(jsonString);
+}
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     switch (type) {
@@ -25,12 +39,34 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
             break;
         case WStype_CONNECTED:
             Serial.println("WebSocket connected");
-            webSocket.sendTXT("Hello from ESP8266");
+            sendIdentity();
             break;
-        case WStype_TEXT:
+        case WStype_TEXT: {
+
             Serial.printf("Received from WebSocket and Forward to Arduino: %s\n", payload); // Log the raw payload
-            mySerial.printf((char*)payload); // Forward message to Arduino via hardware serial
+
+            StaticJsonDocument<200> doc;
+            DeserializationError error = deserializeJson(doc, payload);
+            if (!error) {
+                const char* commandType = doc["type"];
+                const char* command = doc["command"];
+                const char* message = doc["message"];
+                const char* direction = doc["direction"];
+                int speed = doc["speed"];
+
+                if (strcmp(commandType, "command") == 0 && strcmp(command, "update_display") == 0) {
+                    Serial.printf("Command received: %s\n", message);
+                    Serial.printf("Direction: %s, Speed: %d\n", direction, speed);
+
+                    // Forward message to Arduino or handle internally
+                    mySerial.printf("Message: %s, Direction: %s, Speed: %d\n", message, direction, speed);
+                }
+              } else {
+                  Serial.println("Failed to parse command JSON");
+              }
+            // mySerial.printf((char*)payload); // Forward message to Arduino via hardware serial
             break;
+        }
         case WStype_ERROR: 
             Serial.printf("WebSocket Error: %s\n", payload);
             break;
