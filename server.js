@@ -2,12 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const mysql = require('mysql2');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt');   
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const server = http.createServer(app);
 const WebSocket = require('ws');;
 const wss = new WebSocket.Server({ port: 3001 });
+
+const SECRET_KEY = process.env.SECRET_KEY;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -101,7 +104,7 @@ app.post('/signup', async (req, res) => {
 });
 
 app.get('/api/activity-logs', (req, res) => {
-    const sql = 'SELECT timestamp, user_id, action, text_content, scroll_speed, scroll_direction FROM system_changes ORDER BY timestamp DESC LIMIT 10'; // Adjust your query as needed
+    const sql = 'SELECT timestamp, user_id, action, text_content, scroll_speed, scroll_direction FROM system_changes ORDER BY timestamp DESC LIMIT 10';
     db.query(sql, (err, results) => {
       if (err) {
         res.status(500).send({ error: 'Error fetching activity logs' });
@@ -133,6 +136,7 @@ wss.on('connection', (ws) => {
             switch (parsedData.type) {
                 case 'display_settings':
                     handleDisplaySettings(parsedData);
+                    
                     break;
                 default:
                     console.error('Unknown data type:', parsedData.type);
@@ -151,6 +155,15 @@ wss.on('connection', (ws) => {
 
 
 
+function broadcast() {
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send();
+        }
+    });
+}
+
+
 function handleDisplaySettings(data) {
     const { message, direction, speed } = data;
 
@@ -164,8 +177,9 @@ function handleDisplaySettings(data) {
     db.query(sql, [userId, message, speed, direction, action], (err, result) => {
         if (err) {
             console.error('Failed to insert display settings into database:', err);
-        } else {
-            console.log('Display settings saved successfully:', result);
+        } else {        
+            // Broadcast the new activity to all connected clients
+            broadcast();
         }
     });
 }
